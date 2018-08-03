@@ -15,17 +15,23 @@ import subprocess
 # ElasticSearch Cluster to Send Metrics
 elasticIndex = os.environ.get('ES_METRICS_INDEX_NAME', 'gpu_metrics')
 elasticMonitoringCluster = os.environ.get('ES_METRICS_CLUSTER_URL', 'http://192.168.1.151:9200')
-interval = int(os.environ.get('ES_METRICS_INTERVAL', '20'))
+interval = int(os.environ.get('ES_METRICS_INTERVAL', '10'))
 
 def get_gpu_data():
     query = ["timestamp","gpu_name","pci.bus_id","driver_version","pstate","pcie.link.gen.max","pcie.link.gen.current",
-             "temperature.gpu","utilization.gpu","utilization.memory","memory.total","memory.free","memory.used","power.draw"]
+             "temperature.gpu","utilization.gpu","utilization.memory","memory.total","memory.free","memory.used","power.draw",
+             "gpu_serial","clocks.current.graphics","clocks.current.sm","clocks.current.memory","ecc.errors.corrected.aggregate.total",
+             "ecc.errors.uncorrected.aggregate.total","gpu_uuid","clocks.max.mem","clocks.max.sm","clocks.max.graphics"]
     #example Output:
     #'2018/08/01 17:58:35.632', 'TeslaP100 - PCIE - 16GB', '00000000:06:00.0', 390.46, 'P0', 3, 3, 25, 3, 0, 16280, 16280, 0, 27.00
     #set the DataType here
-    dType = [str, str, str, float, str, int, int, int, int, int, int, int, int, float]
+    dType = [str, str, str, float, str, int, int, int, int, int, int, int, int, float, int, int, int, int, int, int, str, int, int, int]
     try:
-        output = subprocess.check_output(["echo", "2018/08/01 17:58:35.632, TeslaP100 - PCIE - 16GB, 00000000:06:00.0, 390.46, P0, 3, 3, 25, 3, 0, 16280, 16280, 0, 27.00"]).rstrip()
+        output = subprocess.check_output(["nvidia-smi", "--query-gpu=timestamp,name,pci.bus_id,driver_version,pstate,pcie.link.gen.max,
+                                          pcie.link.gen.current,temperature.gpu,utilization.gpu,utilization.memory,memory.total,memory.free,
+                                          memory.used,power.draw,gpu_serial,clocks.current.graphics,clocks.current.sm,clocks.current.memory,
+                                          ecc.errors.corrected.aggregate.total,ecc.errors.uncorrected.aggregate.total,gpu_uuid,clocks.max.mem,
+                                          clocks.max.sm,clocks.max.graphics", "--format=csv,nounits,noheader"]).rstrip()
         list_strings = output.split(", ")
         list_values = [t(x) for t, x in zip(dType, list_strings)]
         zipped = dict(zip(query, list_values))
