@@ -27,16 +27,21 @@ def get_gpu_data():
     #set the DataType here
     dType = [str, str, str, float, str, int, int, int, int, int, int, int, int, float, int, int, int, int, int, int, str, int, int, int]
     try:
-        output = subprocess.check_output(["nvidia-smi", "--query-gpu=timestamp,name,pci.bus_id,driver_version,pstate,pcie.link.gen.max,
-                                          pcie.link.gen.current,temperature.gpu,utilization.gpu,utilization.memory,memory.total,memory.free,
-                                          memory.used,power.draw,gpu_serial,clocks.current.graphics,clocks.current.sm,clocks.current.memory,
-                                          ecc.errors.corrected.aggregate.total,ecc.errors.uncorrected.aggregate.total,gpu_uuid,clocks.max.mem,
-                                          clocks.max.sm,clocks.max.graphics", "--format=csv,nounits,noheader"]).rstrip()
+        output = subprocess.check_output(["nvidia-smi", "--query-gpu=timestamp,name,pci.bus_id,driver_version,pstate,"
+                                                        "pcie.link.gen.max,pcie.link.gen.current,temperature.gpu,"
+                                                        "utilization.gpu,utilization.memory,memory.total,memory.free,"
+                                                        "memory.used,power.draw,gpu_serial,clocks.current.graphics,"
+                                                        "clocks.current.sm,clocks.current.memory,"
+                                                        "ecc.errors.corrected.aggregate.total,"
+                                                        "ecc.errors.uncorrected.aggregate.total,gpu_uuid,"
+                                                        "clocks.max.mem,clocks.max.sm,clocks.max.graphics",
+                                          "--format=csv,nounits,noheader"]).rstrip()
         list_strings = output.split(", ")
         list_values = [t(x) for t, x in zip(dType, list_strings)]
         zipped = dict(zip(query, list_values))
         zipped['@timestamp'] = str(datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3])
-        zipped['node'] = socket.gethostname()
+        zipped['node'] = socket.gethostname().lower()
+        zipped['pstate'] = int((zipped['pstate']).replace('P',''))
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(zipped)
         post_data(zipped)
