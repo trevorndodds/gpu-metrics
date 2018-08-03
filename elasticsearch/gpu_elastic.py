@@ -13,9 +13,9 @@ import pprint
 import subprocess
 
 # ElasticSearch Cluster to Send Metrics
-elasticIndex = os.environ.get('ES_METRICS_INDEX_NAME', 'gpu_metrics')
-elasticMonitoringCluster = os.environ.get('ES_METRICS_CLUSTER_URL', 'http://192.168.1.151:9200')
-interval = int(os.environ.get('ES_METRICS_INTERVAL', '10'))
+elasticIndex = os.environ.get('GPU_METRICS_INDEX_NAME', 'gpu_metrics')
+elasticMonitoringCluster = os.environ.get('GPU_METRICS_CLUSTER_URL', 'http://192.168.1.151:9200')
+interval = int(os.environ.get('GPU_METRICS_INTERVAL', '10'))
 
 def get_gpu_data():
     query = ["timestamp","gpu_name","pci.bus_id","driver_version","pstate","pcie.link.gen.max","pcie.link.gen.current",
