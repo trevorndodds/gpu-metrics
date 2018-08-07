@@ -17,18 +17,15 @@ elasticIndex = os.environ.get('GPU_METRICS_INDEX_NAME', 'gpu_metrics')
 elasticMonitoringCluster = os.environ.get('GPU_METRICS_CLUSTER_URL', 'http://192.168.1.151:9200')
 interval = int(os.environ.get('GPU_METRICS_INTERVAL', '10'))
 
-def get_gpu_data():
+def get_gpu_data(gpu):
     query = ["timestamp","gpu_name","pci.bus_id","driver_version","pstate","pcie.link.gen.max","pcie.link.gen.current",
              "temperature.gpu","utilization.gpu","utilization.memory","memory.total","memory.free","memory.used","power.draw",
              "gpu_serial","clocks.current.graphics","clocks.current.sm","clocks.current.memory","ecc.errors.corrected.aggregate.total",
              "ecc.errors.uncorrected.aggregate.total","gpu_uuid","clocks.max.mem","clocks.max.sm","clocks.max.graphics"]
-    #example Output:
-    #'2018/08/01 17:58:35.632', 'TeslaP100 - PCIE - 16GB', '00000000:06:00.0', 390.46, 'P0', 3, 3, 25, 3, 0, 16280, 16280, 0, 27.00
-    #set the DataType here
     dType = [str, str, str, float, str, int, int, int, int, int, int, int, int, float, int, int, int, int, int, int, str, int, int, int]
     try:
-        output = subprocess.check_output(["nvidia-smi", "--query-gpu=timestamp,name,pci.bus_id,driver_version,pstate,"
-                                                        "pcie.link.gen.max,pcie.link.gen.current,temperature.gpu,"
+        output = subprocess.check_output(["nvidia-smi", "-i", gpu, "--query-gpu=timestamp,name,pci.bus_id,driver_version,"
+                                                        "pstate,pcie.link.gen.max,pcie.link.gen.current,temperature.gpu,"
                                                         "utilization.gpu,utilization.memory,memory.total,memory.free,"
                                                         "memory.used,power.draw,gpu_serial,clocks.current.graphics,"
                                                         "clocks.current.sm,clocks.current.memory,"
@@ -41,13 +38,36 @@ def get_gpu_data():
         zipped = dict(zip(query, list_values))
         zipped['@timestamp'] = str(datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3])
         zipped['node'] = socket.gethostname().lower()
+        zipped['gpu_id'] = 'gpu-'+str(gpu)
         zipped['pstate'] = int((zipped['pstate']).replace('P',''))
         pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(zipped)
+        #pp.pprint(zipped)
         post_data(zipped)
     except Exception as e:
         print "Error:  {0}".format(str(e))
         pass
+
+
+def get_gpu_apps(gpu):
+    query = ["timestamp","gpu_name","gpu_bus_id","gpu_serial","gpu_uuid","pid","process_name","used_gpu_memory"]
+    dType = [str, str, str, int, str, int, str, int]
+    try:
+        output = subprocess.check_output(["nvidia-smi", "-i", gpu, "--query-compute-apps=timestamp,gpu_name,gpu_bus_id,"
+                                                        "gpu_serial,gpu_uuid,pid,process_name,used_gpu_memory"
+                                          "--format=csv,nounits,noheader"]).rstrip()
+        list_strings = output.split(", ")
+        list_values = [t(x) for t, x in zip(dType, list_strings)]
+        zipped = dict(zip(query, list_values))
+        zipped['@timestamp'] = str(datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3])
+        zipped['node'] = socket.gethostname().lower()
+        zipped['gpu_id'] = 'gpu-'+str(gpu)
+        pp = pprint.PrettyPrinter(indent=4)
+        #pp.pprint(zipped)
+        post_data(zipped)
+    except Exception as e:
+        print "Error:  {0}".format(str(e))
+        pass
+
 
 def post_data(data):
     utc_datetime = datetime.datetime.utcnow()
@@ -58,23 +78,31 @@ def post_data(data):
     try:
         req = urllib2.Request(url, headers=headers, data=json.dumps(data))
         response = urllib2.urlopen(req)
-        print response.read()
+        #print response.read()
     except Exception as e:
         print "Error:  {0}".format(str(e))
 
 
-def main():
-    get_gpu_data()
+def main(gpus):
+    for gpu in range(gpus):
+        get_gpu_data(gpu)
+        get_gpu_apps(gpu)
 
 
 if __name__ == '__main__':
+    try:
+        gpus = int(subprocess.check_output(["nvidia-smi", "-L", "|", "wc -l"]).rstrip())
+        #print "Found %s GPUs" % gpus
+    except:
+        print "No GPUs Found"
+        exit(1)
     try:
         nextRun = 0
         while True:
             if time.time() >= nextRun:
                 nextRun = time.time() + interval
                 now = time.time()
-                main()
+                main(gpus)
                 elapsed = time.time() - now
                 print "Total Elapsed Time: %s" % elapsed
                 timeDiff = nextRun - time.time()
