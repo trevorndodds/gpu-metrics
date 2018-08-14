@@ -56,7 +56,8 @@ def get_gpu_apps(gpu):
                                                         "gpu_serial,gpu_uuid,pid,process_name,used_gpu_memory",
                                           "--format=csv,nounits,noheader"]).rstrip()
         if len(output) >= 1:
-            list_strings = output.split(", ")
+          for line in output.split('\n'):
+            list_strings = line.split(", ")
             list_values = [t(x) for t, x in zip(dType, list_strings)]
             zipped = dict(zip(query, list_values))
             zipped['@timestamp'] = str(datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3])
