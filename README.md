@@ -4,7 +4,8 @@ https://grafana.com/dashboards/7320
 Create Systemd service
 
 Create Folder and copy webhook:
-```sudo mkdir -p /data/scripts/gpu/
+```
+sudo mkdir -p /data/scripts/gpu/
 sudo cp /tmp/gpu_elastic.py /data/scripts/gpu/
 ```
 Create Service
