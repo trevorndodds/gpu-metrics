@@ -93,7 +93,7 @@ def main(gpus):
 
 if __name__ == '__main__':
     try:
-        gpus = int(subprocess.check_output(["nvidia-smi", "-L"]).rstrip())
+        gpus = subprocess.check_output(["nvidia-smi", "-L"]).rstrip()
         gpus = len(gpus.split('\n'))
         #print "Found %s GPUs" % gpus
     except subprocess.CalledProcessError as e:
