@@ -108,7 +108,7 @@ if __name__ == '__main__':
                 now = time.time()
                 main(gpus)
                 elapsed = time.time() - now
-                print "Total Elapsed Time: %s" % elapsed
+                #print "Total Elapsed Time: %s" % elapsed
                 timeDiff = nextRun - time.time()
 
                 # Check timediff , if timediff >=0 sleep, if < 0 send metrics to es
