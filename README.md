@@ -2,7 +2,17 @@
 
 https://grafana.com/dashboards/7320
 
-Create Systemd service
+Build and run Docker Container:
+```
+docker build -t <user>/gpu-elastic-metrics:latest .
+```
+
+To run it:
+```
+docker run -t -d --runtime=nvidia --restart always --name cuda-gpu-metrics -e GPU_METRICS_CLUSTER_URL='http://elasticURL:9200' <user>/gpu-elastic-metrics:latest 
+```
+
+Alternative: Create Systemd service
 
 Create Folder and copy webhook:
 ```
