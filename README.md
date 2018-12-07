@@ -9,7 +9,7 @@ docker build -t <user>/gpu-elastic-metrics:latest .
 
 To run it:
 ```bash
-docker run -t -d --runtime=nvidia --restart always --name cuda-gpu-metrics \ 
+docker run -d --runtime=nvidia --restart always --name cuda-gpu-metrics \ 
 -e GPU_METRICS_CLUSTER_URL='http://elasticURL:9200' <user>/gpu-elastic-metrics:latest 
 ```
 
